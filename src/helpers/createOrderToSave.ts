@@ -1,4 +1,4 @@
-import { DocumentData } from "firebase-admin/firestore";
+import { DocumentData } from 'firebase-admin/firestore';
 
 export default function createOrderToSave(orderDto: DocumentData) {
   const orderToSave = {
@@ -7,8 +7,8 @@ export default function createOrderToSave(orderDto: DocumentData) {
     address: orderDto.address.id,
     offer: orderDto.offer.id,
     payment: orderDto.payment,
-    created_at: new Date().toISOString()
-  }
+    created_at: new Date().toISOString(),
+  };
 
-  return Object.assign({}, orderToSave)
+  return Object.assign({}, orderToSave);
 }
