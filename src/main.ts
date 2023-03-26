@@ -14,10 +14,10 @@ async function bootstrap() {
       host: configService.get('TCP_HOST'),
       port: configService.get('TCP_PORT'),
       retryAttempts: 3,
-      retryDelay: 500
-    }
-  })
-  app.startAllMicroservices()
+      retryDelay: 500,
+    },
+  });
+  app.startAllMicroservices();
   await app.listen(port);
 }
 bootstrap();

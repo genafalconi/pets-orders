@@ -7,4 +7,5 @@ export const firebaseApp: firebase.app.App = firebase.initializeApp({
   ),
 });
 export const firebaseAuth: firebase.auth.Auth = firebaseApp.auth();
-export const firebaseFirestore: firebase.firestore.Firestore = firebaseApp.firestore();
+export const firebaseFirestore: firebase.firestore.Firestore =
+  firebaseApp.firestore();

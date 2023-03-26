@@ -1,5 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { auth } from 'firebase-admin'
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { auth } from 'firebase-admin';
 import { firebaseApp } from './firebase.app';
 
 @Injectable()
@@ -11,9 +16,9 @@ export class FirebaseAuthGuard implements CanActivate {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException();
     }
-    const idToken = authHeader.split(' ')[1]; 
+    const idToken = authHeader.split(' ')[1];
     try {
-      const decodedToken = await auth(firebaseApp).verifyIdToken(idToken)
+      const decodedToken = await auth(firebaseApp).verifyIdToken(idToken);
       req.user = decodedToken.uid;
       return true;
     } catch (error) {

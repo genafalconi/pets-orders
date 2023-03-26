@@ -5,9 +5,9 @@ import { OrdersModule } from './orders/orders.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `env/${process.env.NODE_ENV || 'dev'}.env`
+      envFilePath: `env/${process.env.NODE_ENV || 'dev'}.env`,
     }),
-    OrdersModule
+    OrdersModule,
   ],
   controllers: [],
   providers: [],
