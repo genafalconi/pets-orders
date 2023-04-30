@@ -8,7 +8,7 @@ export class Address extends Document {
   street: string;
 
   @Prop({ required: true })
-  number: number
+  number: number;
 
   @Prop({ required: true })
   city: string;
@@ -17,20 +17,19 @@ export class Address extends Document {
   province: string;
 
   @Prop({ required: false })
-  flat: string
+  flat: string;
 
   @Prop({ required: false })
-  floor: string
+  floor: string;
 
   @Prop({ default: true })
-  active: boolean
+  active: boolean;
 
   @Prop({ required: false })
-  extra: string
+  extra: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   user: User;
 }
 
 export const AddressSchema = SchemaFactory.createForClass(Address);
-

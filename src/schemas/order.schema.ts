@@ -44,9 +44,9 @@ OrderSchema.pre('find', function (next) {
       model: 'Subproduct',
       populate: {
         path: 'product',
-        model: 'Product'
-      }
-    }
+        model: 'Product',
+      },
+    },
   });
   next();
 });
@@ -63,9 +63,9 @@ OrderSchema.pre('findOne', function (next) {
       model: 'Subproduct',
       populate: {
         path: 'product',
-        model: 'Product'
-      }
-    }
+        model: 'Product',
+      },
+    },
   });
   next();
 });

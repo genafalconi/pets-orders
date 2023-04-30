@@ -1,7 +1,12 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
-import { Subproduct } from "./subprod.schema";
-import { AnimalAgeDto, AnimalDto, BrandDto, CategoryDto } from "../dto/types.dto";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+import { Subproduct } from './subprod.schema';
+import {
+  AnimalAgeDto,
+  AnimalDto,
+  BrandDto,
+  CategoryDto,
+} from '../dto/types.dto';
 
 @Schema()
 export class Product extends Document {
@@ -36,7 +41,7 @@ export class Product extends Document {
   active: boolean;
 }
 
-const ProductSchema = SchemaFactory.createForClass(Product)
+const ProductSchema = SchemaFactory.createForClass(Product);
 
 ProductSchema.statics.addSubproducts = async function (
   subproducts: Subproduct[],

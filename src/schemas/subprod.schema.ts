@@ -1,7 +1,13 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
-import { AnimalAgeDto, AnimalDto, AnimalSizeDto, BrandDto, CategoryDto } from "../dto/types.dto";
-import { Product } from "./product.schema";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+import {
+  AnimalAgeDto,
+  AnimalDto,
+  AnimalSizeDto,
+  BrandDto,
+  CategoryDto,
+} from '../dto/types.dto';
+import { Product } from './product.schema';
 
 @Schema()
 export class Subproduct extends Document {
@@ -42,4 +48,4 @@ export class Subproduct extends Document {
   highlight: boolean;
 }
 
-export const SubproductSchema = SchemaFactory.createForClass(Subproduct)
+export const SubproductSchema = SchemaFactory.createForClass(Subproduct);

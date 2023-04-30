@@ -2,20 +2,20 @@ export enum CategoryDto {
   ALIMENTO_BALANCEADO = 'ALIMENTO BALANCEADO',
   ACCESORIOS = 'ACCESORIOS',
   PIEDRAS = 'PIEDRAS',
-  MEDICAMENTO = 'MEDICAMENTO'
+  MEDICAMENTO = 'MEDICAMENTO',
 }
 
 export enum AnimalDto {
   CAT = 'CAT',
-  DOG = 'DOG'
+  DOG = 'DOG',
 }
 
 export enum AnimalSizeDto {
-  SMALL ='SMALL',
+  SMALL = 'SMALL',
   MEDIUM = 'MEDIUM',
   MEDIUM_LARGE = 'MEDIUM AND LARGE',
   LARGE = 'LARGE',
-  ALL = 'ALL'
+  ALL = 'ALL',
 }
 
 export enum AnimalAgeDto {
@@ -23,7 +23,7 @@ export enum AnimalAgeDto {
   ADULT = 'ADULT',
   SENIOR = 'SENIOR',
   ALL = 'ALL',
-  KITTEN = 'KITTEN'
+  KITTEN = 'KITTEN',
 }
 
 export enum BrandDto {
@@ -39,13 +39,12 @@ export enum BrandDto {
   OLD_PRINCE = 'OLD PRINCE',
   BIOPET = 'BIOPET',
   UNIK = 'UNIK',
-  OPTIMUM = 'OPTIMUM'
+  OPTIMUM = 'OPTIMUM',
 }
-
 
 export enum StatusOrder {
   CONFIRMED = 'CONFIRMED',
   DELIVERED = 'DELIVERED',
   CANCELLED = 'CANCELLED',
-  PROCESS = 'PROCESS'
-} 
+  PROCESS = 'PROCESS',
+}

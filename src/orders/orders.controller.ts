@@ -21,10 +21,13 @@ export class OrdersController {
   constructor(
     @Inject(OrdersService)
     private readonly ordersService: OrdersService,
-  ) { }
+  ) {}
 
   @Post('/new')
-  async createOrder(@Body() orderData: OrderDto, @Req() req: CustomRequest): Promise<Order> {
+  async createOrder(
+    @Body() orderData: OrderDto,
+    @Req() req: CustomRequest,
+  ): Promise<Order> {
     const token = req.headers?.authorization?.split(' ')[1];
     return await this.ordersService.createOrder(orderData, token);
   }
@@ -37,15 +40,15 @@ export class OrdersController {
   @Post('/msg')
   async send(@Param('orderId') orderId: string, @Req() req: CustomRequest) {
     const token = req.headers?.authorization?.split(' ')[1];
-    return await this.ordersService.sendMessageOrder(orderId, token)
+    return await this.ordersService.sendMessageOrder(orderId, token);
   }
 
-  @Put('/delivered/:orderId') 
+  @Put('/delivered/:orderId')
   async deliveredOffer(@Param('orderId') orderId: string) {
-    return await this.ordersService.updateDeliverOrder(orderId)
+    return await this.ordersService.updateDeliverOrder(orderId);
   }
-  @Put('/cancel/:orderId') 
+  @Put('/cancel/:orderId')
   async cancelOffer(@Param('orderId') orderId: string) {
-    return await this.ordersService.updateCancelOrder(orderId)
+    return await this.ordersService.updateCancelOrder(orderId);
   }
 }

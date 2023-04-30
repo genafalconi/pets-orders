@@ -11,9 +11,8 @@ export class SubproductDto {
   updated_at: string;
 }
 
-
 export enum Payment_Type {
   CASH = 'CASH',
   MP = 'MP',
-  TRANSFERENCIA = 'TRANSFERENCIA'
+  TRANSFERENCIA = 'TRANSFERENCIA',
 }

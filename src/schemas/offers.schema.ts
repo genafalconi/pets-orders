@@ -17,4 +17,3 @@ export class Offer extends Document {
 }
 
 export const OfferSchema = SchemaFactory.createForClass(Offer);
-

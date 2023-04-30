@@ -23,10 +23,10 @@ import { OrdersService } from './orders.service';
       { name: Product.name, schema: ProductSchema },
       { name: Subproduct.name, schema: SubproductSchema },
       { name: Offer.name, schema: OfferSchema },
-      { name: Lock.name, schema: LockSchema }
-    ])
+      { name: Lock.name, schema: LockSchema },
+    ]),
   ],
   controllers: [OrdersController],
-  providers: [OrdersService]
+  providers: [OrdersService],
 })
-export class OrdersModule { }
+export class OrdersModule {}

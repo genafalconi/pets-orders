@@ -16,62 +16,63 @@ import { firebaseClientAuth } from 'src/firebase/firebase.app';
 
 @Injectable()
 export class OrdersService {
-
   constructor(
     @InjectModel(Order.name)
     private readonly orderModel: Model<Order>,
     @InjectModel(Cart.name)
     private readonly cartModel: Model<Cart>,
     @InjectModel(Lock.name)
-    private readonly lockModel: Model<Lock>
-  ) { }
+    private readonly lockModel: Model<Lock>,
+  ) {}
 
   async createOrder(orderBody: OrderDto, token_id: string): Promise<any> {
     const orderToSave = createOrderToSave(orderBody, this.orderModel);
-    await this.updateStatusCart(orderBody.cart._id)
-    await this.updateLocks(orderBody.locks)
+    await this.updateStatusCart(orderBody.cart._id);
+    await this.updateLocks(orderBody.locks);
     const newOrder = await this.orderModel.create(orderToSave);
-    await this.sendMessageOrder(newOrder._id, token_id)
-    Logger.log('Order created', newOrder)
-    return newOrder
+    await this.sendMessageOrder(newOrder._id, token_id);
+    Logger.log('Order created', newOrder);
+    return newOrder;
   }
 
   async getOrderData(orderId: string): Promise<Order> {
-    const orderDoc = await this.orderModel.findOne({ _id: orderId }).exec()
-    return orderDoc
+    const orderDoc = await this.orderModel.findOne({ _id: orderId }).exec();
+    return orderDoc;
   }
 
   async updateStatusCart(cartId: string): Promise<void> {
     const cartBought: Cart = await this.cartModel.findOneAndUpdate(
       { _id: new Types.ObjectId(cartId) },
       { $set: { active: false, bought: true } },
-      { new: true }
+      { new: true },
     );
-    Logger.log('Bought cart', cartBought)
+    Logger.log('Bought cart', cartBought);
   }
 
   async updateLocks(locks: any): Promise<void> {
-    const deletedLocks: Array<Lock> = []
-    for (let lock of locks) {
-      const lockDelete = await this.lockModel.findOneAndDelete({ _id: lock._id })
-      deletedLocks.push(lockDelete)
+    const deletedLocks: Array<Lock> = [];
+    for (const lock of locks) {
+      const lockDelete = await this.lockModel.findOneAndDelete({
+        _id: lock._id,
+      });
+      deletedLocks.push(lockDelete);
     }
-    Logger.log('Locks Deleted', JSON.stringify(deletedLocks))
+    Logger.log('Locks Deleted', JSON.stringify(deletedLocks));
   }
 
   async sendMessageOrder(orderId: string, token: string) {
-    const orderData = await this.orderModel.findOne({ _id: orderId }).exec()
-    const messageData = this.formatMessageData(orderData)
-    console.log('messageData', messageData)
+    const orderData = await this.orderModel.findOne({ _id: orderId }).exec();
+    const messageData = this.formatMessageData(orderData);
+    console.log('messageData', messageData);
     try {
-      await requestToWpp('send_order', messageData, token)
+      await requestToWpp('send_order', messageData, token);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 
   formatMessageData(orderData: Order) {
-    const products: Array<any> = []
+    const products: Array<any> = [];
     const messageData: MessageDataDto = {
       _id: orderData._id,
       products: null,
@@ -79,61 +80,64 @@ export class OrdersService {
       date: this.dateFormat(orderData.offer.date),
       address: `${orderData.address.street} ${orderData.address.number} ${orderData.address.extra}`,
       total_cart: orderData.cart.total_price,
-      payment_type: orderData.payment_type
-    }
+      payment_type: orderData.payment_type,
+    };
 
-    for (let subprod of orderData.cart.subproducts) {
+    for (const subprod of orderData.cart.subproducts) {
       const prod = {
         product: `${subprod.subproduct.product.name} ${subprod.subproduct.size}kg`,
-        quantity: subprod.quantity
-      }
-      products.push(prod)
+        quantity: subprod.quantity,
+      };
+      products.push(prod);
     }
 
-    messageData.products = products
+    messageData.products = products;
 
-    return messageData
+    return messageData;
   }
 
   dateFormat(offer_date: Date) {
     const date = new Date(offer_date);
     const day = date.getDate();
     const month = date.getMonth() + 1;
-    const formattedDate = `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''}${month}`;
+    const formattedDate = `${day < 10 ? '0' : ''}${day}/${
+      month < 10 ? '0' : ''
+    }${month}`;
 
-    return formattedDate
+    return formattedDate;
   }
 
   async updateDeliverOrder(orderId: string) {
     await this.orderModel.updateOne(
       { _id: orderId },
-      { $set: { status: StatusOrder.DELIVERED } }
+      { $set: { status: StatusOrder.DELIVERED } },
     );
   }
 
   async updateCancelOrder(orderId: string) {
     await this.orderModel.updateOne(
       { _id: orderId },
-      { $set: { status: StatusOrder.CANCELLED } }
+      { $set: { status: StatusOrder.CANCELLED } },
     );
   }
 
   @Cron('19 20 * * 4')
   async dayOrdersToDeliver() {
-    const token = await this.getToken()
+    const token = await this.getToken();
     const today = new Date(new Date().setHours(-3, 0, 0, 0));
-    const orderDay = await this.orderModel.find({ status: StatusOrder.CONFIRMED })
+    const orderDay = await this.orderModel
+      .find({ status: StatusOrder.CONFIRMED })
       .populate({
         path: 'offer',
         match: {
-          date: today
-        }
-      })
-    const offersMsg = offersToDeliver(orderDay)
+          date: today,
+        },
+      });
+    const offersMsg = offersToDeliver(orderDay);
     try {
-      await requestToWpp('coordination', offersMsg, token)
+      await requestToWpp('coordination', offersMsg, token);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 

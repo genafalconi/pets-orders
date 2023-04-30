@@ -2,14 +2,17 @@ import { Model, Types } from 'mongoose';
 import { OrderDto } from 'src/dto/order.dto';
 import { Order } from 'src/schemas/order.schema';
 
-export default function createOrderToSave(orderDto: OrderDto, orderModel: Model<Order>) {
+export default function createOrderToSave(
+  orderDto: OrderDto,
+  orderModel: Model<Order>,
+) {
   const orderToSave = new orderModel({
     user: new Types.ObjectId(orderDto.user),
     cart: new Types.ObjectId(orderDto.cart._id),
     address: new Types.ObjectId(orderDto.address._id),
     offer: new Types.ObjectId(orderDto.offer._id),
-    payment_type: orderDto.payment_type
-  })
+    payment_type: orderDto.payment_type,
+  });
 
   return orderToSave;
 }
