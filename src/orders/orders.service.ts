@@ -1,82 +1,158 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OrderDto } from 'src/dto/order.dto';
-import { CollectionReference, DocumentData } from 'firebase-admin/firestore';
-import { firebaseFirestore } from 'src/firebase/firebase.app';
 import createOrderToSave from 'src/helpers/createOrderToSave';
-import { ClientProxy } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
-import formatDataOrder from 'src/helpers/formatDataOrder';
-import { CartDto } from 'src/dto/cart.dto';
-import { AddressDto } from 'src/dto/address.dto';
-import { OfferDto } from 'src/dto/offer.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Order } from 'src/schemas/order.schema';
+import { Model, Types } from 'mongoose';
+import { Cart } from 'src/schemas/cart.schema';
+import { Lock } from 'src/schemas/lock.schema';
+import { MessageDataDto } from 'src/dto/message.dto';
+import { StatusOrder } from 'src/dto/types.dto';
+import { Cron } from '@nestjs/schedule';
+import { offersToDeliver } from 'src/helpers/formatOrderToDeliver';
+import requestToWpp from 'src/helpers/requestToWpp';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { firebaseClientAuth } from 'src/firebase/firebase.app';
 
 @Injectable()
 export class OrdersService {
 
-  private orderCollection: CollectionReference;
-  private cartCollection: CollectionReference;
-  private authCollection: CollectionReference;
-  private offerCollection: CollectionReference;
-  private addressCollection: CollectionReference;
+  constructor(
+    @InjectModel(Order.name)
+    private readonly orderModel: Model<Order>,
+    @InjectModel(Cart.name)
+    private readonly cartModel: Model<Cart>,
+    @InjectModel(Lock.name)
+    private readonly lockModel: Model<Lock>
+  ) { }
 
-  constructor() {
-    this.orderCollection = firebaseFirestore.collection('order');
-    this.cartCollection = firebaseFirestore.collection('cart');
-    this.authCollection = firebaseFirestore.collection('user');
-    this.offerCollection = firebaseFirestore.collection('offer');
-    this.addressCollection = firebaseFirestore.collection('address');
+  async createOrder(orderBody: OrderDto, token_id: string): Promise<any> {
+    const orderToSave = createOrderToSave(orderBody, this.orderModel);
+    await this.updateStatusCart(orderBody.cart._id)
+    await this.updateLocks(orderBody.locks)
+    const newOrder = await this.orderModel.create(orderToSave);
+    await this.sendMessageOrder(newOrder._id, token_id)
+    Logger.log('Order created', newOrder)
+    return newOrder
   }
 
-  async createOrder(orderBody: OrderDto): Promise<DocumentData> {
-    const orderToSave = createOrderToSave(orderBody);
-    const orderCol = this.orderCollection.doc();
-    await orderCol.set(orderToSave);
-
-    const orderSaved = await orderCol.get();
-    const orderData = orderSaved.data();
-    return { ...orderData, id: orderSaved.id };
+  async getOrderData(orderId: string): Promise<Order> {
+    const orderDoc = await this.orderModel.findOne({ _id: orderId }).exec()
+    return orderDoc
   }
 
-  async getOrderData(orderId: string): Promise<DocumentData> {
-    const orderDoc = await this.orderCollection.doc(orderId).get();
-    if (orderDoc.exists) {
-      const cart = await this.getOrderCart(orderDoc.data().cart)
-      const address = await this.getUserAddressById(orderDoc.data().address)
-      const offer = await this.getOrderOffer(orderDoc.data().offer)
+  async updateStatusCart(cartId: string): Promise<void> {
+    const cartBought: Cart = await this.cartModel.findOneAndUpdate(
+      { _id: new Types.ObjectId(cartId) },
+      { $set: { active: false, bought: true } },
+      { new: true }
+    );
+    Logger.log('Bought cart', cartBought)
+  }
 
-      const orderData = formatDataOrder(
-        orderDoc.data().user,
-        cart,
-        address,
-        offer,
-      );
-      Logger.log(orderData, 'Order data');
-      return { ...orderData, id: orderId };
+  async updateLocks(locks: any): Promise<void> {
+    const deletedLocks: Array<Lock> = []
+    for (let lock of locks) {
+      const lockDelete = await this.lockModel.findOneAndDelete({ _id: lock._id })
+      deletedLocks.push(lockDelete)
     }
-    return {};
+    Logger.log('Locks Deleted', JSON.stringify(deletedLocks))
   }
 
-  async getOrderCart(cartId: string): Promise<CartDto> {
-    const cartDoc: DocumentData = await this.cartCollection.doc(cartId).get();
-    const cartToDisactive = cartDoc.data();
-    const cartRef = this.cartCollection.doc(cartDoc.id);
-
-    cartToDisactive.isActive = false;
-    await cartRef.update(cartToDisactive);
-
-    const cartUpdated = await cartRef.get();
-    return cartUpdated.data() as CartDto;
+  async sendMessageOrder(orderId: string, token: string) {
+    const orderData = await this.orderModel.findOne({ _id: orderId }).exec()
+    const messageData = this.formatMessageData(orderData)
+    console.log('messageData', messageData)
+    try {
+      await requestToWpp('send_order', messageData, token)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  async getUserAddressById(addressId: string): Promise<AddressDto> {
-    const addressInDb: DocumentData = await this.addressCollection
-      .doc(addressId)
-      .get();
-    return addressInDb.data() as AddressDto;
+  formatMessageData(orderData: Order) {
+    const products: Array<any> = []
+    const messageData: MessageDataDto = {
+      _id: orderData._id,
+      products: null,
+      phone: orderData.user.phone,
+      date: this.dateFormat(orderData.offer.date),
+      address: `${orderData.address.street} ${orderData.address.number} ${orderData.address.extra}`,
+      total_cart: orderData.cart.total_price,
+      payment_type: orderData.payment_type
+    }
+
+    for (let subprod of orderData.cart.subproducts) {
+      const prod = {
+        product: `${subprod.subproduct.product.name} ${subprod.subproduct.size}kg`,
+        quantity: subprod.quantity
+      }
+      products.push(prod)
+    }
+
+    messageData.products = products
+
+    return messageData
   }
 
-  async getOrderOffer(orderId: string): Promise<OfferDto> {
-    const offerDoc = await this.offerCollection.doc(orderId).get();
-    return offerDoc.data() as OfferDto;
+  dateFormat(offer_date: Date) {
+    const date = new Date(offer_date);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const formattedDate = `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''}${month}`;
+
+    return formattedDate
+  }
+
+  async updateDeliverOrder(orderId: string) {
+    await this.orderModel.updateOne(
+      { _id: orderId },
+      { $set: { status: StatusOrder.DELIVERED } }
+    );
+  }
+
+  async updateCancelOrder(orderId: string) {
+    await this.orderModel.updateOne(
+      { _id: orderId },
+      { $set: { status: StatusOrder.CANCELLED } }
+    );
+  }
+
+  @Cron('19 20 * * 4')
+  async dayOrdersToDeliver() {
+    const token = await this.getToken()
+    const today = new Date(new Date().setHours(-3, 0, 0, 0));
+    const orderDay = await this.orderModel.find({ status: StatusOrder.CONFIRMED })
+      .populate({
+        path: 'offer',
+        match: {
+          date: today
+        }
+      })
+    const offersMsg = offersToDeliver(orderDay)
+    try {
+      await requestToWpp('coordination', offersMsg, token)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  async getToken() {
+    const email = process.env.EMAIL;
+    const password = process.env.PASSWORD;
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        firebaseClientAuth,
+        email,
+        password,
+      );
+      // Get the ID token for the signed-in user
+      const idToken = await userCredential.user.getIdToken();
+
+      return idToken;
+    } catch (error) {
+      console.error(error);
+      return error;
+    }
   }
 }
