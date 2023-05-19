@@ -21,7 +21,7 @@ export class OrdersController {
   constructor(
     @Inject(OrdersService)
     private readonly ordersService: OrdersService,
-  ) {}
+  ) { }
 
   @Post('/new')
   async createOrder(
@@ -47,6 +47,7 @@ export class OrdersController {
   async deliveredOffer(@Param('orderId') orderId: string) {
     return await this.ordersService.updateDeliverOrder(orderId);
   }
+
   @Put('/cancel/:orderId')
   async cancelOffer(@Param('orderId') orderId: string) {
     return await this.ordersService.updateCancelOrder(orderId);

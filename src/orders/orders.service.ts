@@ -13,6 +13,8 @@ import { offersToDeliver } from 'src/helpers/formatOrderToDeliver';
 import requestToWpp from 'src/helpers/requestToWpp';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseClientAuth } from 'src/firebase/firebase.app';
+import { Subproduct } from 'src/schemas/subprod.schema';
+import { User } from 'src/schemas/user.schema';
 
 @Injectable()
 export class OrdersService {
@@ -23,13 +25,24 @@ export class OrdersService {
     private readonly cartModel: Model<Cart>,
     @InjectModel(Lock.name)
     private readonly lockModel: Model<Lock>,
-  ) {}
+    @InjectModel(Subproduct.name)
+    private readonly subproductModel: Model<Subproduct>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<User>
+  ) { }
 
   async createOrder(orderBody: OrderDto, token_id: string): Promise<any> {
     const orderToSave = createOrderToSave(orderBody, this.orderModel);
-    await this.updateStatusCart(orderBody.cart._id);
-    await this.updateLocks(orderBody.locks);
+    await Promise.all([
+      this.updateStatusCart(orderBody.cart._id),
+      this.updateSubproductsQuantity(orderBody.cart),
+      this.updateLocks(orderBody.locks),
+    ]);
     const newOrder = await this.orderModel.create(orderToSave);
+    await this.userModel.updateOne(
+      { _id: orderBody.user },
+      { $push: { orders: newOrder._id } },
+    );
     await this.sendMessageOrder(newOrder._id, token_id);
     Logger.log('Order created', newOrder);
     return newOrder;
@@ -100,9 +113,8 @@ export class OrdersService {
     const date = new Date(offer_date);
     const day = date.getDate();
     const month = date.getMonth() + 1;
-    const formattedDate = `${day < 10 ? '0' : ''}${day}/${
-      month < 10 ? '0' : ''
-    }${month}`;
+    const formattedDate = `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''
+      }${month}`;
 
     return formattedDate;
   }
@@ -121,7 +133,19 @@ export class OrdersService {
     );
   }
 
-  @Cron('19 20 * * 4')
+  async updateSubproductsQuantity(cart: Cart) {
+    for (let subprod of cart.subproducts) {
+      const currentSubprod = await this.subproductModel.findById(subprod.subproduct._id)
+      const newStock = currentSubprod.stock - subprod.quantity
+      await this.subproductModel.findByIdAndUpdate(
+        subprod.subproduct._id,
+        { $set: { stock: newStock } },
+        { new: true }
+      )
+    }
+  }
+
+  @Cron('0 0 12 * * MON,WED,FRI')
   async dayOrdersToDeliver() {
     const token = await this.getToken();
     const today = new Date(new Date().setHours(-3, 0, 0, 0));

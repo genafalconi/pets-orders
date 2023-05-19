@@ -27,14 +27,11 @@ export class User extends Document {
   @Prop({ required: true })
   firebase_id: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Cart' })
-  active_cart: Cart;
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Address' }], default: [] })
+  addresses: Types.ObjectId[];
 
-  @Prop({ type: Types.ObjectId, ref: 'Address' })
-  active_address: Address[];
-
-  @Prop({ type: Types.ObjectId, ref: 'Order' })
-  orders: Order[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Order' }], default: [] })
+  orders: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
