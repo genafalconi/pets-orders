@@ -48,3 +48,5 @@ export enum StatusOrder {
   CANCELLED = 'CANCELLED',
   PROCESS = 'PROCESS',
 }
+
+export const REORDER = 're-order'

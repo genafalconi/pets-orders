@@ -13,4 +13,5 @@ export class OrderDto {
   offer: Offer;
   payment_type: Payment_Type;
   locks: Lock;
+  order_type?: string
 }

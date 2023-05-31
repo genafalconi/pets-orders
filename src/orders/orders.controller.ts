@@ -21,7 +21,7 @@ export class OrdersController {
   constructor(
     @Inject(OrdersService)
     private readonly ordersService: OrdersService,
-  ) { }
+  ) {}
 
   @Post('/new')
   async createOrder(
@@ -37,7 +37,7 @@ export class OrdersController {
     return await this.ordersService.getOrderData(orderId);
   }
 
-  @Post('/msg')
+  @Post('/msg/:orderId')
   async send(@Param('orderId') orderId: string, @Req() req: CustomRequest) {
     const token = req.headers?.authorization?.split(' ')[1];
     return await this.ordersService.sendMessageOrder(orderId, token);

@@ -7,7 +7,7 @@ import { Model, Types } from 'mongoose';
 import { Cart } from 'src/schemas/cart.schema';
 import { Lock } from 'src/schemas/lock.schema';
 import { MessageDataDto } from 'src/dto/message.dto';
-import { StatusOrder } from 'src/dto/types.dto';
+import { REORDER, StatusOrder } from 'src/dto/types.dto';
 import { Cron } from '@nestjs/schedule';
 import { offersToDeliver } from 'src/helpers/formatOrderToDeliver';
 import requestToWpp from 'src/helpers/requestToWpp';
@@ -28,22 +28,29 @@ export class OrdersService {
     @InjectModel(Subproduct.name)
     private readonly subproductModel: Model<Subproduct>,
     @InjectModel(User.name)
-    private readonly userModel: Model<User>
+    private readonly userModel: Model<User>,
   ) { }
 
   async createOrder(orderBody: OrderDto, token_id: string): Promise<any> {
-    const orderToSave = createOrderToSave(orderBody, this.orderModel);
+    let cart = orderBody.cart
+    if (orderBody.order_type === REORDER) {
+      cart = await this.createReorderCart(orderBody.cart)
+    }
+    console.log(cart)
     await Promise.all([
-      this.updateStatusCart(orderBody.cart._id),
-      this.updateSubproductsQuantity(orderBody.cart),
+      this.updateStatusCart(cart._id),
+      this.updateSubproductsQuantity(cart),
       this.updateLocks(orderBody.locks),
     ]);
+    const orderToSave = createOrderToSave(orderBody, cart, this.orderModel);
     const newOrder = await this.orderModel.create(orderToSave);
-    await this.userModel.updateOne(
-      { _id: orderBody.user },
-      { $push: { orders: newOrder._id } },
-    );
-    await this.sendMessageOrder(newOrder._id, token_id);
+    await Promise.all([
+      await this.userModel.updateOne(
+        { _id: orderBody.user },
+        { $push: { orders: newOrder._id } },
+      ),
+      await this.sendMessageOrder(newOrder._id, token_id)
+    ])
     Logger.log('Order created', newOrder);
     return newOrder;
   }
@@ -51,6 +58,17 @@ export class OrdersService {
   async getOrderData(orderId: string): Promise<Order> {
     const orderDoc = await this.orderModel.findOne({ _id: orderId }).exec();
     return orderDoc;
+  }
+
+  async createReorderCart(cart: Cart) {
+    return await this.cartModel.create({
+      subproducts: cart.subproducts,
+      active: cart.active,
+      bought: cart.bought,
+      total_products: cart.total_products,
+      total_price: cart.total_price,
+      user: cart.user
+    })
   }
 
   async updateStatusCart(cartId: string): Promise<void> {
@@ -75,6 +93,7 @@ export class OrdersService {
 
   async sendMessageOrder(orderId: string, token: string) {
     const orderData = await this.orderModel.findOne({ _id: orderId }).exec();
+    console.log(orderData)
     const messageData = this.formatMessageData(orderData);
     console.log('messageData', messageData);
     try {
@@ -96,7 +115,7 @@ export class OrdersService {
       payment_type: orderData.payment_type,
     };
 
-    for (const subprod of orderData.cart.subproducts) {
+    for (const subprod of orderData?.cart?.subproducts) {
       const prod = {
         product: `${subprod.subproduct.product.name} ${subprod.subproduct.size}kg`,
         quantity: subprod.quantity,
@@ -134,14 +153,16 @@ export class OrdersService {
   }
 
   async updateSubproductsQuantity(cart: Cart) {
-    for (let subprod of cart.subproducts) {
-      const currentSubprod = await this.subproductModel.findById(subprod.subproduct._id)
-      const newStock = currentSubprod.stock - subprod.quantity
+    for (const subprod of cart.subproducts) {
+      const currentSubprod = await this.subproductModel.findById(
+        subprod.subproduct._id,
+      );
+      const newStock = currentSubprod.stock - subprod.quantity;
       await this.subproductModel.findByIdAndUpdate(
         subprod.subproduct._id,
         { $set: { stock: newStock } },
-        { new: true }
-      )
+        { new: true },
+      );
     }
   }
 
