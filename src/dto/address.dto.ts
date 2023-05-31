@@ -1,5 +1,5 @@
 export class AddressDto {
-  id: string;
+  _id: string;
   street: string;
   number: number;
   floor: string;

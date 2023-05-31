@@ -3,5 +3,5 @@ export class OfferDto {
   hours: string;
   isOpen: boolean;
   weekday: string;
-  id: string;
+  _id: string;
 }
