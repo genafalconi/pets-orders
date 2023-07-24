@@ -14,6 +14,7 @@ export default function createOrderToSave(
     address: new Types.ObjectId(orderDto.address._id),
     offer: new Types.ObjectId(orderDto.offer._id),
     payment_type: orderDto.payment_type,
+    ecommerce: true
   });
 
   return orderToSave;

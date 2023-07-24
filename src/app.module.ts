@@ -16,7 +16,7 @@ import { ScheduleModule } from '@nestjs/schedule';
         useUnifiedTopology: true,
         maxPoolSize: 30,
         retryAttempts: 2,
-        retryDelay: 1000,
+        retryDelay: 1000
       }),
     }),
     OrdersModule,
@@ -25,4 +25,4 @@ import { ScheduleModule } from '@nestjs/schedule';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

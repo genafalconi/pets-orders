@@ -28,6 +28,9 @@ export class Order extends Document {
 
   @Prop({ default: StatusOrder.CONFIRMED })
   status: StatusOrder;
+
+  @Prop({ default: true })
+  ecommerce: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

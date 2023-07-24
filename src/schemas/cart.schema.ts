@@ -11,12 +11,14 @@ export class Cart extends Document {
         _id: false,
         subproduct: { type: Types.ObjectId, ref: 'Subproduct' },
         quantity: 'number',
+        profit: 'number'
       },
     ],
   })
   subproducts: {
     subproduct: Subproduct;
     quantity: number;
+    profit: number;
   }[];
 
   @Prop({ required: true })
