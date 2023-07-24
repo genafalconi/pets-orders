@@ -11,7 +11,7 @@ export class Cart extends Document {
         _id: false,
         subproduct: { type: Types.ObjectId, ref: 'Subproduct' },
         quantity: 'number',
-        profit: 'number'
+        profit: 'number',
       },
     ],
   })
