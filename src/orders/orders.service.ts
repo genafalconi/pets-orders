@@ -29,14 +29,14 @@ export class OrdersService {
     private readonly subproductModel: Model<Subproduct>,
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
-  ) { }
+  ) {}
 
   async createOrder(orderBody: OrderDto, token_id: string): Promise<any> {
-    let cart = orderBody.cart
+    let cart = orderBody.cart;
     if (orderBody.order_type === REORDER) {
-      cart = await this.createReorderCart(orderBody.cart)
+      cart = await this.createReorderCart(orderBody.cart);
     }
-    console.log(cart)
+
     await Promise.all([
       this.updateStatusCart(cart._id),
       this.updateSubproductsQuantity(cart),
@@ -49,8 +49,8 @@ export class OrdersService {
         { _id: orderBody.user },
         { $push: { orders: newOrder._id } },
       ),
-      await this.sendMessageOrder(newOrder._id, token_id)
-    ])
+      await this.sendMessageOrder(newOrder._id, token_id),
+    ]);
     Logger.log('Order created', newOrder);
     return newOrder;
   }
@@ -67,8 +67,8 @@ export class OrdersService {
       bought: cart.bought,
       total_products: cart.total_products,
       total_price: cart.total_price,
-      user: cart.user
-    })
+      user: cart.user,
+    });
   }
 
   async updateStatusCart(cartId: string): Promise<void> {
@@ -93,7 +93,7 @@ export class OrdersService {
 
   async sendMessageOrder(orderId: string, token: string) {
     const orderData = await this.orderModel.findOne({ _id: orderId }).exec();
-    console.log(orderData)
+    console.log(orderData);
     const messageData = this.formatMessageData(orderData);
     console.log('messageData', messageData);
     try {
@@ -132,8 +132,9 @@ export class OrdersService {
     const date = new Date(offer_date);
     const day = date.getDate();
     const month = date.getMonth() + 1;
-    const formattedDate = `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''
-      }${month}`;
+    const formattedDate = `${day < 10 ? '0' : ''}${day}/${
+      month < 10 ? '0' : ''
+    }${month}`;
 
     return formattedDate;
   }

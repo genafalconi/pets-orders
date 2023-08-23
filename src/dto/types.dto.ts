@@ -49,4 +49,4 @@ export enum StatusOrder {
   PROCESS = 'PROCESS',
 }
 
-export const REORDER = 're-order'
+export const REORDER = 're-order';
