@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrdersModule } from './orders/orders.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -10,14 +10,17 @@ import { ScheduleModule } from '@nestjs/schedule';
       envFilePath: `env/${process.env.NODE_ENV || 'dev'}.env`,
     }),
     MongooseModule.forRootAsync({
-      useFactory: async () => ({
-        uri: process.env.MONGO_DB,
+      imports: [ConfigModule],
+      useFactory: async (config: ConfigService) => ({
+        uri: config.get('MONGO_DB'),
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        maxPoolSize: 30,
+        maxPoolSize: 10,
         retryAttempts: 2,
         retryDelay: 1000,
+        maxIdleTimeMS: 5000
       }),
+      inject: [ConfigService],
     }),
     OrdersModule,
     ScheduleModule.forRoot(),
