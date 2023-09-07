@@ -15,6 +15,9 @@ export class User extends Document {
   @Prop({ required: true })
   admin: boolean;
 
+  @Prop({ default: 30 })
+  period_buy: number;
+
   @Prop({ required: false })
   phone: string;
 
