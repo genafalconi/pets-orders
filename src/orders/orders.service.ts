@@ -49,7 +49,7 @@ export class OrdersService {
         { _id: orderBody.user },
         { $push: { orders: newOrder._id } },
       ),
-      await this.sendMessageOrder(newOrder._id, token_id),
+      // await this.sendMessageOrder(newOrder._id, token_id),
     ]);
     Logger.log('Order created', newOrder);
     return newOrder;
