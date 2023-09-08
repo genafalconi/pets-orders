@@ -44,6 +44,7 @@ export class OrdersService {
     ]);
     const orderToSave = createOrderToSave(orderBody, cart, this.orderModel);
     const newOrder = await this.orderModel.create(orderToSave);
+
     await Promise.all([
       await this.userModel.updateOne(
         { _id: orderBody.user },
