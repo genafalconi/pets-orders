@@ -29,13 +29,10 @@ export class OrdersService {
     private readonly subproductModel: Model<Subproduct>,
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
-  ) {}
+  ) { }
 
-  async createOrder(orderBody: OrderDto, token_id: string): Promise<any> {
-    let cart = orderBody.cart;
-    if (orderBody.order_type === REORDER) {
-      cart = await this.createReorderCart(orderBody.cart);
-    }
+  async createOrder(orderBody: OrderDto): Promise<any> {
+    const cart = await this.createOrderCart(orderBody.cart);
 
     await Promise.all([
       this.updateStatusCart(cart._id),
@@ -61,7 +58,7 @@ export class OrdersService {
     return orderDoc;
   }
 
-  async createReorderCart(cart: Cart) {
+  async createOrderCart(cart: Cart) {
     return await this.cartModel.create({
       subproducts: cart.subproducts,
       active: cart.active,
@@ -133,9 +130,8 @@ export class OrdersService {
     const date = new Date(offer_date);
     const day = date.getDate();
     const month = date.getMonth() + 1;
-    const formattedDate = `${day < 10 ? '0' : ''}${day}/${
-      month < 10 ? '0' : ''
-    }${month}`;
+    const formattedDate = `${day < 10 ? '0' : ''}${day}/${month < 10 ? '0' : ''
+      }${month}`;
 
     return formattedDate;
   }

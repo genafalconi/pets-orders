@@ -21,15 +21,11 @@ export class OrdersController {
   constructor(
     @Inject(OrdersService)
     private readonly ordersService: OrdersService,
-  ) {}
+  ) { }
 
   @Post('/new')
-  async createOrder(
-    @Body() orderData: OrderDto,
-    @Req() req: CustomRequest,
-  ): Promise<Order> {
-    const token = req.headers?.authorization?.split(' ')[1];
-    return await this.ordersService.createOrder(orderData, token);
+  async createOrder(@Body() orderData: OrderDto): Promise<Order> {
+    return await this.ordersService.createOrder(orderData);
   }
 
   @Get('/order/:orderId')
