@@ -32,7 +32,10 @@ export class OrdersService {
   ) { }
 
   async createOrder(orderBody: OrderDto): Promise<any> {
-    const cart = await this.createOrderCart(orderBody.cart);
+    let cart = orderBody.cart
+    if(orderBody.order_type === REORDER) {
+      cart = await this.createOrderCart(orderBody.cart);
+    }
 
     await Promise.all([
       this.updateStatusCart(cart._id),
