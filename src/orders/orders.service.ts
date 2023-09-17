@@ -33,7 +33,7 @@ export class OrdersService {
 
   async createOrder(orderBody: OrderDto): Promise<any> {
     let cart = orderBody.cart
-    if(orderBody.order_type === REORDER || !cart._id) {
+    if(orderBody.order_type === REORDER) {
       cart = await this.createOrderCart(orderBody.cart);
     }
 
