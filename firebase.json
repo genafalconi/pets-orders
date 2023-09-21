@@ -14,7 +14,11 @@
         "npm --prefix \"$RESOURCE_DIR\" run lint",
         "npm --prefix \"$RESOURCE_DIR\" run build"
       ],
-      "runtime": "nodejs16"
+      "runtime": "nodejs16",
+      "minInstances": 1,
+      "maxInstances": 1,
+      "memory": "256MB",
+      "timeoutSeconds": 60
     }
   ]
 }
