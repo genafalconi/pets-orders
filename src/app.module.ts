@@ -16,9 +16,12 @@ import { ScheduleModule } from '@nestjs/schedule';
         useNewUrlParser: true,
         useUnifiedTopology: true,
         maxPoolSize: 10,
-        retryAttempts: 2,
-        retryDelay: 1000,
-        maxIdleTimeMS: 5000
+        autoIndex: false,
+        poolSize: 5,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        keepAlive: true,
+        keepAliveInitialDelay: 300000,
       }),
       inject: [ConfigService],
     }),
@@ -28,4 +31,4 @@ import { ScheduleModule } from '@nestjs/schedule';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
