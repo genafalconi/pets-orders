@@ -1,12 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import {
-  AnimalAgeDto,
-  AnimalDto,
-  AnimalSizeDto,
-  BrandDto,
-  CategoryDto,
-} from '../dto/types.dto';
 import { Product } from './product.schema';
 
 @Schema()
@@ -14,38 +7,29 @@ export class Subproduct extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Product' })
   product: Product;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   buy_price: number;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   sell_price: number;
 
   @Prop({ required: true })
+  sale_price: number;
+
+  @Prop({ required: false })
   size: number;
 
-  @Prop({ required: true })
-  category: CategoryDto;
-
-  @Prop({ required: true })
-  animal: AnimalDto;
-
-  @Prop({ required: true })
-  brand: BrandDto;
-
-  @Prop({ required: true })
-  animal_size: AnimalSizeDto;
-
-  @Prop({ required: true })
-  animal_age: AnimalAgeDto;
-
-  @Prop({ required: true })
+  @Prop({ required: false })
   active: boolean;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   stock: number;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   highlight: boolean;
+
+  @Prop({ required: false, default: false })
+  has_lock: boolean;
 }
 
 export const SubproductSchema = SchemaFactory.createForClass(Subproduct);
