@@ -4,6 +4,7 @@ import { Subproduct } from './subprod.schema';
 import {
   AnimalAgeDto,
   AnimalDto,
+  AnimalSizeDto,
   BrandDto,
   CategoryDto,
 } from '../dto/types.dto';
@@ -28,11 +29,11 @@ export class Product extends Document {
   @Prop({ required: false })
   animal_age: AnimalAgeDto;
 
-  @Prop({ required: false })
-  description: string;
+  @Prop({ required: true })
+  animal_size: AnimalSizeDto;
 
   @Prop({ required: false })
-  highlight: boolean;
+  description: string;
 
   @Prop({ required: false })
   image: string;
