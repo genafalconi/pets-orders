@@ -5,6 +5,7 @@ import { Address } from './address.schema';
 import { Cart } from './cart.schema';
 import { Offer } from './offers.schema';
 import { User } from './user.schema';
+import { SubproductBought } from './subprodsBought.schema';
 
 @Schema({ timestamps: true })
 export class Order extends Document {
@@ -13,6 +14,9 @@ export class Order extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'Cart' })
   cart: Cart;
+
+  @Prop({ type: Types.ObjectId, ref: 'SubproductBought' })
+  products: SubproductBought[]
 
   @Prop({ type: Types.ObjectId, ref: 'Address' })
   address: Address;
@@ -36,25 +40,6 @@ export class Order extends Document {
 export const OrderSchema = SchemaFactory.createForClass(Order);
 
 OrderSchema.pre('find', function (next) {
-  this.populate('user');
-  this.populate('address');
-  this.populate('offer');
-  this.populate({
-    path: 'cart',
-    model: 'Cart',
-    populate: {
-      path: 'subproducts.subproduct',
-      model: 'Subproduct',
-      populate: {
-        path: 'product',
-        model: 'Product',
-      },
-    },
-  });
-  next();
-});
-
-OrderSchema.pre('findOne', function (next) {
   this.populate('user');
   this.populate('address');
   this.populate('offer');

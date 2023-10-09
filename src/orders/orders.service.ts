@@ -15,6 +15,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseClientAuth } from 'src/firebase/firebase.app';
 import { Subproduct } from 'src/schemas/subprod.schema';
 import { User } from 'src/schemas/user.schema';
+import { SubproductBought } from 'src/schemas/subprodsBought.schema';
 
 @Injectable()
 export class OrdersService {
@@ -29,20 +30,23 @@ export class OrdersService {
     private readonly subproductModel: Model<Subproduct>,
     @InjectModel(User.name)
     private readonly userModel: Model<User>,
+    @InjectModel(SubproductBought.name)
+    private readonly subproductBoughtModel: Model<SubproductBought>
   ) { }
 
   async createOrder(orderBody: OrderDto): Promise<any> {
     let cart = orderBody.cart
-    if(orderBody.order_type === REORDER) {
+    if (orderBody.order_type === REORDER) {
       cart = await this.createOrderCart(orderBody.cart);
     }
 
-    await Promise.all([
+    const [updatedCart, updateSubprod, updateLocks, subprodBought] = await Promise.all([
       this.updateStatusCart(cart._id),
       this.updateSubproductsQuantity(cart),
       this.updateLocks(orderBody.locks),
+      this.createSubproductsBought(cart)
     ]);
-    const orderToSave = createOrderToSave(orderBody, cart, this.orderModel);
+    const orderToSave = createOrderToSave(orderBody, cart, this.orderModel, subprodBought);
     const newOrder = await this.orderModel.create(orderToSave);
 
     await Promise.all([
@@ -57,28 +61,83 @@ export class OrdersService {
   }
 
   async getOrderData(orderId: string): Promise<Order> {
-    const orderDoc = await this.orderModel.findOne({ _id: orderId }).exec();
+    const orderDoc = await this.orderModel.findOne({ _id: orderId })
+      .populate({
+        path: 'products',
+        model: 'SubproductBought',
+        populate: {
+          path: 'subproduct',
+          model: 'Subproduct',
+          select: '_id size stock',
+          populate: {
+            path: 'product',
+            model: 'Product',
+            select: '_id name image',
+          },
+        },
+      })
+      .populate({
+        path: 'cart',
+        model: 'Cart',
+        select: '_id total_price total_products',
+      })
+      .populate('address')
+      .populate('offer')
+      .exec();
     return orderDoc;
   }
 
   async createOrderCart(cart: Cart) {
-    return await this.cartModel.create({
+    const reorderCart = new this.cartModel({
       subproducts: cart.subproducts,
       active: cart.active,
       bought: cart.bought,
       total_products: cart.total_products,
       total_price: cart.total_price,
-      user: cart.user,
-    });
+      user: cart.user
+    })
+
+    const [createdCart, populatedCart] = await Promise.all([
+      this.cartModel.create(reorderCart),
+      reorderCart.populate({
+        path: 'subproducts.subproduct',
+        model: 'Subproduct',
+        select: '_id sell_price sale_price buy_price size highlight',
+        populate: {
+          path: 'product',
+          model: 'Product',
+          select: '_id name image',
+        }
+      })
+    ])
+    return populatedCart
   }
 
   async updateStatusCart(cartId: string): Promise<void> {
-    const cartBought: Cart = await this.cartModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(cartId) },
+    const cartBought: Cart = await this.cartModel.findByIdAndUpdate(
+      new Types.ObjectId(cartId),
       { $set: { active: false, bought: true } },
-      { new: true },
+      { new: true }
     );
     Logger.log('Bought cart', cartBought);
+  }
+
+  async createSubproductsBought(cart: Cart): Promise<SubproductBought[]> {
+    const subprods: SubproductBought[] = []
+    for (let subprod of cart.subproducts) {
+      const subprodBought = new this.subproductBoughtModel({
+        subproduct: new Types.ObjectId(subprod.subproduct._id),
+        buy_price: subprod.subproduct.buy_price,
+        sale_price: subprod.subproduct.sale_price,
+        sell_price: subprod.subproduct.sell_price,
+        highlight: subprod.subproduct.highlight,
+        quantity: subprod.quantity,
+        buy_date: new Date()
+      })
+      subprods.push(subprodBought)
+      await this.subproductBoughtModel.create(subprodBought)
+    }
+    return subprods
   }
 
   async updateLocks(locks: any): Promise<void> {
@@ -94,7 +153,6 @@ export class OrdersService {
 
   async sendMessageOrder(orderId: string, token: string) {
     const orderData = await this.orderModel.findOne({ _id: orderId }).exec();
-    console.log(orderData);
     const messageData = this.formatMessageData(orderData);
     console.log('messageData', messageData);
     try {
@@ -156,7 +214,7 @@ export class OrdersService {
   async updateSubproductsQuantity(cart: Cart) {
     for (const subprod of cart.subproducts) {
       const currentSubprod = await this.subproductModel.findById(
-        subprod.subproduct._id,
+        new Types.ObjectId(subprod.subproduct._id)
       );
       const newStock = currentSubprod.stock - subprod.quantity;
       await this.subproductModel.findByIdAndUpdate(
