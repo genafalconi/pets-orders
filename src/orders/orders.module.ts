@@ -9,6 +9,7 @@ import { Order, OrderSchema } from 'src/schemas/order.schema';
 import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { Subproduct, SubproductSchema } from 'src/schemas/subprod.schema';
 import { User, UserSchema } from 'src/schemas/user.schema';
+import { SubproductBought, SubproductBoughtSchema } from 'src/schemas/subprodsBought.schema';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 
@@ -24,6 +25,7 @@ import { OrdersService } from './orders.service';
       { name: Subproduct.name, schema: SubproductSchema },
       { name: Offer.name, schema: OfferSchema },
       { name: Lock.name, schema: LockSchema },
+      { name: SubproductBought.name, schema: SubproductBoughtSchema },
     ]),
   ],
   controllers: [OrdersController],
